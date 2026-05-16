@@ -1,0 +1,8 @@
+default_profile = "duckdb"
+
+[profiles.duckdb]
+adapter = "duckdb"
+theme = "textual-light"
+limit = 100000
+keymap_name = ["vscode"]
+locale = "C"

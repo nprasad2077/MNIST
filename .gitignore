@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+docs\prompts\
+docs/prompts/
+docs\prompts
+docs/prompts
+
+data\
+data
+
+setup.ps1
+*.ps1
+
