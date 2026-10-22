@@ -1,6 +1,6 @@
 # MNIST Handwritten Digit Classification
 
-[![CI](https://github.com/nprasad2077/MNIST/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nprasad2077/MNIST/actions/workflows/ci.yml)
+[![CI](https://github.com/nprasad2077/MNIST/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nprasad2077/MNIST/actions/workflows/ci.yml) [![Dependabot Updates](https://github.com/nprasad2077/MNIST/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/nprasad2077/MNIST/actions/workflows/dependabot/dependabot-updates)
 
 A learning project for training a neural network on the MNIST dataset using PyTorch and DuckDB, with Jupyter notebooks for step-by-step visualization.
 
