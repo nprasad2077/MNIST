@@ -1,0 +1,7 @@
+target-version = "py311"
+extend-exclude = ["docs"]
+
+[lint]
+select = ["E", "F", "W"]
+# Notebooks import where they first need a package, run long lines, and chain matplotlib calls with ";".
+ignore = ["E402", "E501", "E702"]

@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, actions]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Public repo + self-hosted runner: no pull_request trigger, so fork PRs (which can
+# edit this file) never run on this machine. Keep it that way.
+env:
+  RUFF_VERSION: "0.15.0"
+
+jobs:
+  lint-notebooks:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: uvx "ruff@${RUFF_VERSION}" check --output-format=github notebooks/
+
+  format-notebooks:
+    runs-on: self-hosted
+    continue-on-error: true # advisory: notebooks were never formatted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: uvx "ruff@${RUFF_VERSION}" format --check notebooks/
+
+  secret-scan:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: gitleaks detect --source . --redact --verbose
+
+  dep-audit:
+    runs-on: self-hosted
+    continue-on-error: true # advisory: pins are stale; Dependabot tracks bumps
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # Audit the pins only; installing requirements.txt fails on pywinpty.
+      - run: uvx pip-audit -r requirements.txt --no-deps --disable-pip
+
+  workflow-lint:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: actionlint
+
+  notebook-hygiene:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: uv run --python 3.11 --no-project python .github/scripts/notebook_hygiene.py
+
+  summary:
+    if: always()
+    needs: [lint-notebooks, format-notebooks, secret-scan, dep-audit, workflow-lint, notebook-hygiene]
+    runs-on: self-hosted
+    steps:
+      - name: Write job summary
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          RUNNER_DESC: ${{ runner.name }} (${{ runner.os }}/${{ runner.arch }})
+        run: |
+          {
+            echo "## CI results"
+            echo
+            echo "| Job | Result |"
+            echo "|---|---|"
+            echo "$RESULTS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
+            echo
+            echo "- **Trigger:** $EVENT"
+            echo "- **Ref:** $REF_NAME @ ${GITHUB_SHA::7}"
+            echo "- **Actor:** $ACTOR"
+            echo "- **Runner:** $RUNNER_DESC"
+          } >> "$GITHUB_STEP_SUMMARY"
