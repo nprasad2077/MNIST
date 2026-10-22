@@ -1,6 +1,6 @@
 # Self-hosted runner setup (macOS arm64)
 
-This repo is public, so only run the runner for trusted workflows. `ci.yml` skips fork PRs.
+This repo is public, so only run the runner for trusted workflows. `ci.yml` has no `pull_request` trigger on purpose: a fork PR can edit the workflow and run on this machine.
 
 1. Repo → Settings → Actions → Runners → **New self-hosted runner** → macOS / ARM64.
    Follow the download and `./config.sh --url ... --token ...` steps in `~/actions-runner`.

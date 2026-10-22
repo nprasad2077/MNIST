@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [main, dev, actions]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,13 +12,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Public repo + self-hosted runner: never run fork PRs on this machine.
+# Public repo + self-hosted runner: no pull_request trigger, so fork PRs (which can
+# edit this file) never run on this machine. Keep it that way.
 env:
   RUFF_VERSION: "0.15.0"
 
 jobs:
   lint-notebooks:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +27,6 @@ jobs:
       - run: uvx "ruff@${RUFF_VERSION}" check --output-format=github notebooks/
 
   format-notebooks:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     continue-on-error: true # advisory: notebooks were never formatted
     steps:
@@ -39,7 +36,6 @@ jobs:
       - run: uvx "ruff@${RUFF_VERSION}" format --check notebooks/
 
   secret-scan:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +45,6 @@ jobs:
       - run: gitleaks detect --source . --redact --verbose
 
   dep-audit:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     continue-on-error: true # advisory: pins are stale; Dependabot tracks bumps
     steps:
@@ -60,7 +55,6 @@ jobs:
       - run: uvx pip-audit -r requirements.txt --no-deps --disable-pip
 
   workflow-lint:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +63,6 @@ jobs:
       - run: actionlint
 
   notebook-hygiene:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
