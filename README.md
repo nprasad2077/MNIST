@@ -1,5 +1,7 @@
 # MNIST Handwritten Digit Classification
 
+[![CI](https://github.com/nprasad2077/MNIST/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nprasad2077/MNIST/actions/workflows/ci.yml)
+
 A learning project for training a neural network on the MNIST dataset using PyTorch and DuckDB, with Jupyter notebooks for step-by-step visualization.
 
 ## Quick Start
