@@ -19,7 +19,7 @@ env:
 
 jobs:
   lint-notebooks:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,7 +27,7 @@ jobs:
       - run: uvx "ruff@${RUFF_VERSION}" check --output-format=github notebooks/
 
   format-notebooks:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     continue-on-error: true # advisory: notebooks were never formatted
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
       - run: uvx "ruff@${RUFF_VERSION}" format --check notebooks/
 
   secret-scan:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,7 +45,7 @@ jobs:
       - run: gitleaks detect --source . --redact --verbose
 
   dep-audit:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     continue-on-error: true # advisory: pins are stale; Dependabot tracks bumps
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
       - run: uvx pip-audit -r requirements.txt --no-deps --disable-pip
 
   workflow-lint:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,7 +63,7 @@ jobs:
       - run: actionlint
 
   notebook-hygiene:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,7 +73,7 @@ jobs:
   summary:
     if: always()
     needs: [lint-notebooks, format-notebooks, secret-scan, dep-audit, workflow-lint, notebook-hygiene]
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - name: Write job summary
         env:
