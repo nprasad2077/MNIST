@@ -19,65 +19,76 @@ env:
 
 jobs:
   lint-notebooks:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - run: bash .github/scripts/setup-tools.sh uv
       - run: uvx "ruff@${RUFF_VERSION}" check --output-format=github notebooks/
 
   format-notebooks:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     continue-on-error: true # advisory: notebooks were never formatted
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - run: bash .github/scripts/setup-tools.sh uv
       - run: uvx "ruff@${RUFF_VERSION}" format --check notebooks/
 
   secret-scan:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+      - run: bash .github/scripts/setup-tools.sh gitleaks
       - run: gitleaks detect --source . --redact --verbose
 
   dep-audit:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     continue-on-error: true # advisory: pins are stale; Dependabot tracks bumps
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - run: bash .github/scripts/setup-tools.sh uv
       # Audit the pins only; installing requirements.txt fails on pywinpty.
       - run: uvx pip-audit -r requirements.txt --no-deps --disable-pip
 
   workflow-lint:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - run: bash .github/scripts/setup-tools.sh actionlint
       - run: actionlint
 
   notebook-hygiene:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - run: bash .github/scripts/setup-tools.sh uv
       - run: uv run --python 3.11 --no-project python .github/scripts/notebook_hygiene.py
 
   summary:
     if: always()
     needs: [lint-notebooks, format-notebooks, secret-scan, dep-audit, workflow-lint, notebook-hygiene]
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     steps:
       - name: Write job summary
         env:
-          RESULTS: ${{ toJSON(needs) }}
+          LINT: ${{ needs.lint-notebooks.result }}
+          FORMAT: ${{ needs.format-notebooks.result }}
+          SECRETS: ${{ needs.secret-scan.result }}
+          AUDIT: ${{ needs.dep-audit.result }}
+          WORKFLOW: ${{ needs.workflow-lint.result }}
+          HYGIENE: ${{ needs.notebook-hygiene.result }}
           EVENT: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
           ACTOR: ${{ github.actor }}
@@ -88,7 +99,12 @@ jobs:
             echo
             echo "| Job | Result |"
             echo "|---|---|"
-            echo "$RESULTS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
+            echo "| lint-notebooks | $LINT |"
+            echo "| format-notebooks | $FORMAT |"
+            echo "| secret-scan | $SECRETS |"
+            echo "| dep-audit | $AUDIT |"
+            echo "| workflow-lint | $WORKFLOW |"
+            echo "| notebook-hygiene | $HYGIENE |"
             echo
             echo "- **Trigger:** $EVENT"
             echo "- **Ref:** $REF_NAME @ ${GITHUB_SHA::7}"
